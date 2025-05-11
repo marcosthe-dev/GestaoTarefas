@@ -1,4 +1,23 @@
-# ... existing code ...
-oracledb>=1.0.0
-# Remover ou comentar a linha com cx_Oracle
-# cx_Oracle==8.3.0
+# Framework Web
+fastapi>=0.68.0
+flask>=2.0.0
+uvicorn>=0.15.0
+
+# Banco de Dados
+sqlalchemy>=1.4.0
+psycopg2-binary>=2.9.0  # Para PostgreSQL
+pymysql>=1.0.0  # Para MySQL
+oracledb>=1.0.0  # Para Oracle
+
+# Utilitários
+python-dotenv>=0.19.0
+pytz>=2021.3
+pydantic>=1.8.0
+python-multipart>=0.0.5
+starlette>=0.14.0
+
+# Middleware e WSGI
+werkzeug>=2.0.0
+
+# Exportação de Dados
+openpyxl>=3.0.0  # Para exportação Excel
