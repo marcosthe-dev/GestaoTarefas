@@ -81,6 +81,10 @@ def adicionar():
     query_sql = request.form.get("query_sql")
     parametros = request.form.get("parametros")
     conexao = request.form.get("conexao")
+    tipo_banco = request.form.get("tipo_banco")
+
+    if not titulo or not query_sql or not conexao:
+        return "Erro: Título, Query SQL e Conexão são obrigatórios", 400
     
     try:
         # Validar JSON dos parâmetros de conexão
@@ -94,7 +98,10 @@ def adicionar():
             descricao=descricao,
             query_sql=query_sql,
             parametros=parametros,
-            conexao=conexao
+            conexao=conexao,
+            tipo_banco=tipo_banco,
+            ativa=True,
+            data_criacao=datetime.now()
         )
         db.add(consulta)
         db.commit()
@@ -116,10 +123,19 @@ def executar_consulta(consulta_id: int, parametros: dict, db: Session = Depends(
         # Obter parâmetros de conexão
         conexao = json.loads(consulta.conexao)
         
+        # Criar string de conexão baseada no tipo de banco
+        if consulta.tipo_banco == 'postgresql':
+            url = f"postgresql://{conexao['user']}:{conexao['password']}@{conexao['host']}:{conexao['port']}/{conexao['database']}"
+        elif consulta.tipo_banco == 'mysql':
+            url = f"mysql+pymysql://{conexao['user']}:{conexao['password']}@{conexao['host']}:{conexao['port']}/{conexao['database']}"
+        elif consulta.tipo_banco == 'oracle':
+            # Modificado para usar oracledb ao invés de cx_Oracle
+            url = f"oracle+oracledb://{conexao['user']}:{conexao['password']}@{conexao['host']}:{conexao['port']}/{conexao['sid']}"
+        else:
+            raise HTTPException(status_code=400, detail="Tipo de banco de dados não suportado")
+        
         # Criar conexão com o banco de dados alvo
-        engine_alvo = create_engine(
-            f"postgresql://{conexao['user']}:{conexao['password']}@{conexao['host']}:{conexao['port']}/{conexao['database']}"
-        )
+        engine_alvo = create_engine(url)
         
         # Criar sessão para o banco alvo
         SessionAlvo = sessionmaker(bind=engine_alvo)

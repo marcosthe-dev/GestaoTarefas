@@ -16,8 +16,9 @@ class ConsultaSQL(Base):
     titulo = Column(String, nullable=False)
     descricao = Column(String)
     query_sql = Column(Text, nullable=False)
-    parametros = Column(String)  # Parâmetros da consulta em formato JSON
-    conexao = Column(String, nullable=False)  # Parâmetros de conexão em formato JSON
+    parametros = Column(String)
+    conexao = Column(String, nullable=False)
+    tipo_banco = Column(String, nullable=False)  # mysql, postgresql, oracle
     ativa = Column(Boolean, default=True)
     data_criacao = Column(DateTime, default=datetime.now(timezone('America/Sao_Paulo')))
 

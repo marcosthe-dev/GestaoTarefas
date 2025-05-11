@@ -1,0 +1,4 @@
+# ... existing code ...
+oracledb>=1.0.0
+# Remover ou comentar a linha com cx_Oracle
+# cx_Oracle==8.3.0

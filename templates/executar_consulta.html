@@ -133,6 +133,9 @@
                             case 'datetime':
                                 input.type = 'datetime-local';
                                 break;
+                            case 'boolean':
+                                input.type = 'checkbox';
+                                break;
                             case 'integer':
                                 input.type = 'number';
                                 input.step = '1';
@@ -167,7 +170,17 @@
             e.preventDefault();
             const consultaId = document.getElementById('consulta_id').value;
             const formData = new FormData(e.target);
-            const parametros = Object.fromEntries(formData.entries());
+            const parametros = {};
+            
+            // Processar os valores do formulário
+            for (const [key, value] of formData.entries()) {
+                const input = e.target.querySelector(`[name="${key}"]`);
+                if (input && input.dataset.formattedValue) {
+                    parametros[key] = input.dataset.formattedValue;
+                } else {
+                    parametros[key] = value;
+                }
+            }
     
             try {
                 const response = await fetch(`/api/executar/${consultaId}`, {
