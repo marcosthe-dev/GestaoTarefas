@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executar Consulta SQL</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Executar Consulta SQL</h1>
+        
+        <!-- Seleção da Consulta -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Selecione a Consulta</h5>
+                <select class="form-select mb-3" id="consulta_id" onchange="carregarParametros()">
+                    <option value="">Selecione uma consulta...</option>
+                    {% for consulta in consultas %}
+                    {% if consulta.ativa %}
+                    <option value="{{ consulta.id }}">{{ consulta.titulo }}</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+
+                <div id="detalhes_consulta" style="display: none;">
+                    <h6>Detalhes da Consulta</h6>
+                    <p id="descricao_consulta"></p>
+                    <p><strong>Query SQL:</strong></p>
+                    <pre><code id="query_sql_preview"></code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulário de Parâmetros -->
+        <div class="card mb-4" id="form_parametros" style="display: none;">
+            <div class="card-body">
+                <h5 class="card-title">Parâmetros da Consulta</h5>
+                <form id="parametros_form">
+                    <div id="parametros_container">
+                        <!-- Os campos serão gerados dinamicamente aqui -->
+                    </div>
+                    <button type="submit" class="btn btn-primary">Executar Consulta</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="card" id="resultados_container" style="display: none;">
+            <div class="card-body">
+                <h5 class="card-title">Resultados</h5>
+                <div class="mb-3">
+                    <button class="btn btn-secondary btn-sm me-2" onclick="exportarCSV()">Exportar CSV</button>
+                    <button class="btn btn-success btn-sm" onclick="exportarExcel()">Exportar Excel</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped" id="resultados_tabela">
+                        <thead id="resultados_cabecalho"></thead>
+                        <tbody id="resultados_corpo"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let consultasData = {};
+        
+        {% for consulta in consultas %}
+        consultasData[{{ consulta.id }}] = {
+            titulo: {{ consulta.titulo|tojson }},
+            descricao: {{ consulta.descricao|tojson }},
+            query_sql: {{ consulta.query_sql|tojson }},
+            parametros: {{ consulta.parametros|tojson if consulta.parametros else '{}' }}
+        };
+        {% endfor %}
+    
+        function carregarParametros() {
+            const consultaId = document.getElementById('consulta_id').value;
+            const formParametros = document.getElementById('form_parametros');
+            const detalhesConsulta = document.getElementById('detalhes_consulta');
+            const parametrosContainer = document.getElementById('parametros_container');
+            const resultadosContainer = document.getElementById('resultados_container');
+            
+            parametrosContainer.innerHTML = '';
+            resultadosContainer.style.display = 'none';
+            
+            if (!consultaId) {
+                formParametros.style.display = 'none';
+                detalhesConsulta.style.display = 'none';
+                return;
+            }
+    
+            const consulta = consultasData[consultaId];
+            if (!consulta) {
+                console.error('Consulta não encontrada:', consultaId);
+                return;
+            }
+
+            document.getElementById('descricao_consulta').textContent = consulta.descricao || 'Sem descrição disponível';
+            document.getElementById('query_sql_preview').textContent = consulta.query_sql || 'Query SQL não disponível';
+            detalhesConsulta.style.display = 'block';
+    
+            try {
+                const parametros = typeof consulta.parametros === 'string' 
+                    ? JSON.parse(consulta.parametros) 
+                    : consulta.parametros;
+
+                if (!parametros || Object.keys(parametros).length === 0) {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'alert alert-info';
+                    msgDiv.textContent = 'Esta consulta não possui parâmetros.';
+                    parametrosContainer.appendChild(msgDiv);
+                } else {
+                    for (const [param, tipo] of Object.entries(parametros)) {
+                        const div = document.createElement('div');
+                        div.className = 'mb-3';
+                        
+                        const label = document.createElement('label');
+                        label.className = 'form-label';
+                        label.textContent = `${param} (${tipo})`;
+                        
+                        const input = document.createElement('input');
+                        input.className = 'form-control';
+                        input.name = param;
+                        input.required = true;
+                        input.placeholder = `Digite o valor para ${param}`;
+        
+                        switch(tipo.toLowerCase()) {
+                            case 'date':
+                                input.type = 'date';
+                                break;
+                            case 'datetime':
+                                input.type = 'datetime-local';
+                                break;
+                            case 'integer':
+                                input.type = 'number';
+                                input.step = '1';
+                                break;
+                            case 'decimal':
+                            case 'float':
+                            case 'number':
+                                input.type = 'number';
+                                input.step = '0.01';
+                                break;
+                            default:
+                                input.type = 'text';
+                        }
+        
+                        div.appendChild(label);
+                        div.appendChild(input);
+                        parametrosContainer.appendChild(div);
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao processar parâmetros:', error);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger';
+                errorDiv.textContent = 'Erro ao carregar parâmetros da consulta.';
+                parametrosContainer.appendChild(errorDiv);
+            }
+    
+            formParametros.style.display = 'block';
+        }
+    
+        document.getElementById('parametros_form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const consultaId = document.getElementById('consulta_id').value;
+            const formData = new FormData(e.target);
+            const parametros = Object.fromEntries(formData.entries());
+    
+            try {
+                const response = await fetch(`/api/executar/${consultaId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(parametros)
+                });
+    
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Erro ao executar consulta');
+                }
+    
+                const data = await response.json();
+                exibirResultados(data);
+            } catch (error) {
+                alert('Erro ao executar consulta: ' + error.message);
+            }
+        });
+    
+        function exibirResultados(data) {
+            const container = document.getElementById('resultados_container');
+            const cabecalho = document.getElementById('resultados_cabecalho');
+            const corpo = document.getElementById('resultados_corpo');
+    
+            cabecalho.innerHTML = '';
+            corpo.innerHTML = '';
+    
+            if (data.length === 0) {
+                corpo.innerHTML = '<tr><td colspan="100%">Nenhum resultado encontrado</td></tr>';
+                container.style.display = 'block';
+                return;
+            }
+    
+            // Criar cabeçalho
+            const headerRow = document.createElement('tr');
+            Object.keys(data[0]).forEach(key => {
+                const th = document.createElement('th');
+                th.textContent = key;
+                headerRow.appendChild(th);
+            });
+            cabecalho.appendChild(headerRow);
+    
+            // Criar linhas de dados
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                Object.values(row).forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value === null ? '' : value;
+                    tr.appendChild(td);
+                });
+                corpo.appendChild(tr);
+            });
+    
+            container.style.display = 'block';
+        }
+
+        function exportarCSV() {
+            const tabela = document.getElementById('resultados_tabela');
+            const linhas = Array.from(tabela.rows);
+            
+            // Obter cabeçalhos
+            const headers = Array.from(linhas[0].cells).map(cell => `"${cell.textContent}"`);
+            
+            // Obter dados
+            const dados = linhas.slice(1).map(row => 
+                Array.from(row.cells).map(cell => `"${cell.textContent}"`).join(',')
+            );
+            
+            // Montar CSV
+            const csv = [headers.join(','), ...dados].join('\n');
+            
+            // Criar blob e download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'resultados.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportarExcel() {
+            const tabela = document.getElementById('resultados_tabela');
+            const wb = XLSX.utils.table_to_book(tabela, {sheet: "Resultados"});
+            XLSX.writeFile(wb, 'resultados.xlsx');
+        }
+    </script>    
+</body>
+</html>
+
+<!-- Adicionar biblioteca SheetJS -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
