@@ -38,14 +38,16 @@ cd GestaoTarefas
 pip install -r requirements.txt
 ```
 
-### 3. Configuração do Banco de Dados (PostgreSQL)
+### 3. Configuração do Banco de Dados a Ser Consultado Pelo Cliente.
+
+Para testar a aplicação, é necessário criar um banco de dados e inserir dados de exemplo para simular uma consulta SQL. Siga as instruções abaixo para criar as tabelas e inserir dados de exemplo.
 
 #### Pré-requisitos
 
 - PostgreSQL 12 ou superior
 - Permissões de administrador no PostgreSQL
 
-#### Criação das Tabelas
+#### Criação das Tabelas de Teste
 
 Acesse o PostgreSQL via `psql` ou `pgAdmin` e execute os seguintes comandos para criar as tabelas de teste:
 
@@ -64,7 +66,7 @@ CREATE TABLE vendas (
 );
 ```
 
-#### Inserção de Dados
+#### Inserção de Dados de Exemplo
 
 ```sql
 -- Inserção de Produtos
@@ -106,6 +108,12 @@ WHERE
     AND ('Eletrônicos' IS NULL OR p.categoria = 'Eletrônicos')
 GROUP BY p.categoria
 ORDER BY valor_total DESC;
+```
+
+#### Configuração do Banco de Dados a Ser Gerenciado Pelo Administrador
+
+Para gerenciar as consultas SQL, é necessário criar uma tabela no banco de dados de gestão das consultas. Siga as instruções abaixo para criar a tabela e inserir dados de exemplo.
+
 ```sql
 CREATE DATABASE gestao_tarefas;
 \c gestao_tarefas
@@ -123,7 +131,7 @@ CREATE TABLE consultas_sql (
 );
 ```
 
-#### Inserção de Dados de Exemplo
+#### Inserção de Dados de Exemplo de Consultas
 
 ```sql
 INSERT INTO consultas_sql (
