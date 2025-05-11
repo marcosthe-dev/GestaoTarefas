@@ -26,7 +26,7 @@ Este é um sistema de gerenciamento de consultas SQL que permite criar, executar
 
 1. Clone o repositório:
 ```bash
-git clone <seu-repositorio>
+git clone https://github.com/marcosthe-dev/GestaoTarefas.git
 cd GestaoTarefas
 ```
 
@@ -35,7 +35,97 @@ cd GestaoTarefas
 pip install -r requirements.txt
 ```
 
-3. Configure o banco de dados no arquivo `models.py`
+3. Configuração do Banco de Dados
+    ## Configuração do Banco de Dados PostgreSQL
+
+    ### Pré-requisitos
+    - PostgreSQL 12 ou superior instalado
+    - Acesso de administrador ao PostgreSQL
+
+    ### Criando o Banco de Dados de Teste
+
+    1. Acesse o PostgreSQL via psql ou pgAdmin
+
+    2. Execute os seguintes comandos SQL:
+
+    ```sql
+    -- Criar banco de dados
+    CREATE DATABASE gestao_tarefas;
+
+    -- Conectar ao banco criado
+    \c gestao_tarefas
+
+    -- Criar tabela de consultas
+    CREATE TABLE consultas_sql (
+        id SERIAL PRIMARY KEY,
+        titulo VARCHAR(255) NOT NULL,
+        descricao TEXT,
+        query_sql TEXT NOT NULL,
+        parametros TEXT,
+        conexao TEXT NOT NULL,
+        tipo_banco VARCHAR(50) NOT NULL,
+        ativa BOOLEAN DEFAULT TRUE,
+        data_criacao TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+    ```	
+    ### Dados de Exemplo
+    Execute os seguintes comandos para inserir algumas consultas de teste:
+
+    ```sql
+    INSERT INTO consultas_sql (
+    titulo, 
+    descricao, 
+    query_sql, 
+    parametros, 
+    conexao, 
+    tipo_banco
+    ) VALUES (
+        'Consulta de Clientes por Data',
+        'Lista todos os clientes cadastrados após uma data específica',
+        'SELECT * FROM clientes WHERE data_cadastro >= :data_inicio',
+        '{"data_inicio": "date"}',
+        '{"host": "localhost", "port": 5432, "database": "seu_banco", "user": "seu_usuario", "password": "sua_senha"}',
+        'postgresql'
+    );
+
+    INSERT INTO consultas_sql (
+        titulo, 
+        descricao, 
+        query_sql, 
+        parametros, 
+        conexao, 
+        tipo_banco
+    ) VALUES (
+        'Total de Vendas por Período',
+        'Calcula o total de vendas em um período específico',
+        'SELECT COUNT(*) as total, SUM(valor) as valor_total FROM vendas WHERE data_venda BETWEEN :data_inicio AND :data_fim',
+        '{"data_inicio": "date", "data_fim": "date"}',
+        '{"host": "localhost", "port": 5432, "database": "seu_banco", "user": "seu_usuario", "password": "sua_senha"}',
+        'postgresql'
+    );
+    ```
+
+    ### Configuração no arquivo models.py
+    Atualize a string de conexão no arquivo models.py :
+
+    ```python
+    DATABASE_URL = "postgresql://seu_usuario:sua_senha@localhost:5432/gestao_tarefas"
+    ```
+
+    Substitua "usuario" e "senha" pelos seus dados de acesso ao PostgreSQL.
+
+    ### Verificando a Instalação
+    1. Execute a aplicação:
+    ```bash
+    uvicorn app:api --reload
+    ```
+    2. Acesse http://localhost:8000 no navegador
+    3. Você deverá ver as consultas de exemplo cadastradas na interface
+    ### Observações de Segurança
+    - Em ambiente de produção, use variáveis de ambiente para as credenciais
+    - Não armazene senhas em texto plano no banco de dados
+    - Limite o acesso do usuário do banco apenas às operações necessárias
+    - Faça backup regular dos dados
 
 4. Execute a aplicação:
 ```bash
