@@ -116,7 +116,6 @@ Para gerenciar as consultas SQL, é necessário criar uma tabela no banco de dad
 
 ```sql
 CREATE DATABASE gestao_tarefas;
-\c gestao_tarefas
 
 CREATE TABLE consultas_sql (
     id SERIAL PRIMARY KEY,
@@ -134,17 +133,6 @@ CREATE TABLE consultas_sql (
 #### Inserção de Dados de Exemplo de Consultas
 
 ```sql
-INSERT INTO consultas_sql (
-    titulo, descricao, query_sql, parametros, conexao, tipo_banco
-) VALUES (
-    'Consulta de Clientes por Data',
-    'Lista todos os clientes cadastrados após uma data específica',
-    'SELECT * FROM clientes WHERE data_cadastro >= :data_inicio',
-    '{"data_inicio": "date"}',
-    '{"host": "localhost", "port": 5432, "database": "seu_banco", "user": "seu_usuario", "password": "sua_senha"}',
-    'postgresql'
-);
-
 INSERT INTO consultas_sql (
     titulo, descricao, query_sql, parametros, conexao, tipo_banco
 ) VALUES (
